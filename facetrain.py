@@ -1,0 +1,43 @@
+import cv2
+import numpy as np #배열 계산 용이
+from PIL import Image #python imaging library
+import os
+import sys 
+
+def getName(id):
+    return id
+
+face_id = getName(sys.argv[1])
+
+path = 'C:/Users/507/Desktop/object_detection/dataset/'+ face_id + '/'#경로 (dataset 폴더)
+recognizer = cv2.face.LBPHFaceRecognizer_create()
+detector = cv2.CascadeClassifier('C:/Users/507/Desktop/object_detection/haarcascade_frontalface_default.xml')
+
+def getImagesAndLabels(path):
+    imagePaths = [os.path.join(path,f) for f in os.listdir(path)]
+    #listdir : 해당 디렉토리 내 파일 리스트
+    #path + file Name : 경로 list 만들기
+
+    faceSamples = []
+    ids = []
+    for imagePath in imagePaths: #각 파일마다
+        #흑백 변환
+        PIL_img = Image.open(imagePath).convert('L') #L : 8 bit pixel, bw
+        img_numpy = np.array(PIL_img, 'uint8')
+
+        #user id
+        id = int(os.path.split(imagePath)[-1].split(".")[2])#마지막 index : -1
+        #얼굴 샘플
+        faces = detector.detectMultiScale(img_numpy)
+        for(x,y,w,h) in faces:
+            faceSamples.append(img_numpy[y:y+h,x:x+w])
+            ids.append(id)
+    return faceSamples, ids
+
+
+faces, ids = getImagesAndLabels(path)
+
+recognizer.train(faces,np.array(ids)) #학습
+
+recognizer.write('C:/Users/507/Desktop/object_detection/trainer/trainer.yml')
+print("FINISH",end='', flush=True)
